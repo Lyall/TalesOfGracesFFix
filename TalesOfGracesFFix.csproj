@@ -1,0 +1,36 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net6.0</TargetFramework>
+    <AssemblyName>TalesOfGracesFFix</AssemblyName>
+    <Description>A fix for Tales of Graces f Remastered that adds ultrawide/narrower support and more.</Description>
+    <Version>0.0.1</Version>
+    <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
+    <LangVersion>latest</LangVersion>
+    <RestoreAdditionalProjectSources>
+		https://api.nuget.org/v3/index.json;
+		https://nuget.bepinex.dev/v3/index.json;
+		https://nuget.samboy.dev/v3/index.json
+	</RestoreAdditionalProjectSources>
+    <RootNamespace>TalesOfGracesFFix</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+	  <PackageReference Include="BepInEx.Unity.Mono" Version="6.0.0-be.*" IncludeAssets="compile" />
+	  <PackageReference Include="BepInEx.PluginInfoProps" Version="2.*" />
+	  <PackageReference Include="UnityEngine.Modules" Version="2022.3.26" IncludeAssets="compile" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Reference Include="Assembly-CSharp">
+      <HintPath>libs\Assembly-CSharp-publicized.dll</HintPath>
+    </Reference>
+    <Reference Include="Unity.RenderPipelines.Core.Runtime">
+      <HintPath>libs\Unity.RenderPipelines.Core.Runtime-publicized.dll</HintPath>
+    </Reference>
+    <Reference Include="Unity.RenderPipelines.Universal.Runtime">
+      <HintPath>libs\Unity.RenderPipelines.Universal.Runtime-publicized.dll</HintPath>
+    </Reference>
+
+  </ItemGroup>
+</Project>
