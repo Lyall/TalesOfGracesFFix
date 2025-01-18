@@ -90,6 +90,21 @@ namespace TalesOfGracesFFix
                 else if (fAspectRatio < fNativeAspect)
                     __instance.m_Viewport = new Rect(0f, 0f, (float)Screen.width, (float)Screen.height * fAspectMultiplier);
             }
+
+            // Fix movies
+            [HarmonyPatch(typeof(NobleMovieRendereFeature), nameof(NobleMovieRendereFeature.Create))]
+            [HarmonyPostfix]
+            public static void FixMovies(NobleMovieRendereFeature __instance)
+            {
+                // TODO: There's probably a better way of fixing this.
+                if (__instance._pass != null)
+                {
+                    if (fAspectRatio > fNativeAspect)
+                        __instance._pass.cameraview.m33 = fAspectMultiplier;
+                    else if (fAspectRatio < fNativeAspect)
+                        __instance._pass.cameraview.m11 = fAspectMultiplier;
+                }
+            }
         }
 
         [HarmonyPatch]
