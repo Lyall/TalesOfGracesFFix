@@ -18,11 +18,16 @@ jobs:
       with: 
         dotnet-version: '6.0.x'
 
-    - run: dotnet build -c Release -o build
+    - run: dotnet build -c Release
 
-    - run: echo "::set-output name=URL::$(curl -vs https://builds.bepinex.dev/projects/bepinex_be 2>&1 | grep -Po '(?<=href=")(\/projects\/bepinex_be\/(.*)\/BepInEx-Unity.Mono-win-x64(.*))(?=")' | head -1)"
+    - name: Get BepInEx URL
       id: bepinexurl
-    - run: wget https://builds.bepinex.dev${{ steps.bepinexurl.outputs.URL}}
+      run: |
+        URL=$(curl -vs https://builds.bepinex.dev/projects/bepinex_be 2>&1 | grep -Po '(?<=href=")(\/projects\/bepinex_be\/(.*)\/BepInEx-Unity.Mono-win-x64(.*))(?=")' | head -1)
+        echo "URL=$URL" >> $GITHUB_OUTPUT
+      
+    - name: Download BepInEx
+      run: wget https://builds.bepinex.dev${{ steps.bepinexurl.outputs.URL }}
 
     - name: Create release artifact
       run: |
@@ -31,7 +36,7 @@ jobs:
         cp build/${{ github.event.repository.name }}.dll ${{ github.event.repository.name }}/BepInEx/plugins/${{ github.event.repository.name }}.dll
         unzip BepInEx-Unity.Mono-win-x64* -d ${{ github.event.repository.name }}
         chmod -R 775 ${{ github.event.repository.name }}
-        cp .github/workflows/BepInEx.cfg ${{ github.event.repository.name }}BepInEx/config
+        cp .github/workflows/BepInEx.cfg ${{ github.event.repository.name }}/BepInEx/config
         touch ${{ github.event.repository.name }}/EXTRACT_TO_GAME_DIRECTORY
         cd ${{ github.event.repository.name }}; zip -r ../${{ github.event.repository.name }}_${{ github.event.inputs.version }}.zip ./*
 
@@ -39,7 +44,7 @@ jobs:
       run: |
         $releaseBody = "release_body.md"
         $zipName = "${{ github.event.repository.name }}_${{ github.event.inputs.version }}.zip" 
-        (Get-Content $releaseBody -Raw) -replace '<XRELEASE_ZIP_NAME>', $xboxZipName | Set-Content $releaseBody
+        (Get-Content $releaseBody -Raw) -replace '<RELEASE_ZIP_NAME>', $zipName | Set-Content $releaseBody
 
     - uses: ncipollo/release-action@v1
       with:
