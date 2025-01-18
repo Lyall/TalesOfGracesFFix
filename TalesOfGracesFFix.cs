@@ -76,8 +76,11 @@ namespace TalesOfGracesFFix
             [HarmonyPostfix]
             public static void ResetCameraRect(Noble.CameraManager __instance)
             {
-                __instance.mCamera.rect = new Rect(0f, 0f, 1f, 1f);
-                __instance.mCamera.ResetAspect();
+                if (fAspectRatio != fNativeAspect)
+                {
+                    __instance.mCamera.rect = new Rect(0f, 0f, 1f, 1f);
+                    __instance.mCamera.ResetAspect();
+                }
             }
 
             // Set UI ortho matrix for 16:9
