@@ -42,9 +42,9 @@ jobs:
 
     - name: Update release_body.md
       run: |
-        $releaseBody = "release_body.md"
-        $zipName = "${{ github.event.repository.name }}_${{ github.event.inputs.version }}.zip" 
-        (Get-Content $releaseBody -Raw) -replace '<RELEASE_ZIP_NAME>', $zipName | Set-Content $releaseBody
+         releaseBody="release_body.md"
+         zipName="${{ github.event.repository.name }}_${{ github.event.inputs.version }}.zip"
+         sed -i "s/<RELEASE_ZIP_NAME>/$zipName/" "$releaseBody"
 
     - uses: ncipollo/release-action@v1
       with:
