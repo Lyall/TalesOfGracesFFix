@@ -5,6 +5,7 @@ using BepInEx.Logging;
 using HarmonyLib;
 
 using UnityEngine;
+using System;
 
 namespace TalesOfGracesFFix
 {
@@ -59,7 +60,7 @@ namespace TalesOfGracesFFix
         public class AspectRatioPatches
         {
             // Calculate aspect ratio
-            [HarmonyPatch(typeof(Screen), nameof(Screen.SetResolution), [typeof(int), typeof(int), typeof(FullScreenMode)])]
+            [HarmonyPatch(typeof(Screen), nameof(Screen.SetResolution), new Type[] { typeof(int), typeof(int), typeof(FullScreenMode) })]
             [HarmonyPostfix]
             public static void CurrentResolution(ref int __0, ref int __1, ref FullScreenMode __2)
             {
