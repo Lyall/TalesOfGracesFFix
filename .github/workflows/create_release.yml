@@ -41,7 +41,7 @@ jobs:
         $zipName = "${{ github.event.repository.name }}_${{ github.event.inputs.version }}.zip" 
         (Get-Content $releaseBody -Raw) -replace '<XRELEASE_ZIP_NAME>', $xboxZipName | Set-Content $releaseBody
 
-    - uses: ncipollo/release-action@v3
+    - uses: ncipollo/release-action@v1
       with:
         artifacts: "${{ github.event.repository.name }}_${{ github.event.inputs.version }}.zip"
         token: ${{ secrets.GITHUB_TOKEN }}
