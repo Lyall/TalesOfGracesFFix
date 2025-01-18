@@ -27,7 +27,6 @@ Please report any issues you see.
 This list will contain bugs which may or may not be fixed.
 
 - Screen capture textures (such as the pause transition) are squashed when using an ultrawide/narrower display.
-- Enabling MSAA can cause visual issues with the map screen.
 
 ## Screenshots
 
