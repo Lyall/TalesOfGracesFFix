@@ -27,7 +27,7 @@ This list will contain bugs which may or may not be fixed.
 
 - Screen capture textures (such as the pause transition) are squashed when using an ultrawide/narrower display.
 - Pre-rendered movies are stretched when using an ultrawide/narrower display.
-- 
+
 ## Screenshots
 
 | ![ezgif-4-73b55bf57a](https://github.com/user-attachments/assets/27422730-2bd5-4eb1-9f92-caa8f6e7c9ea) |
