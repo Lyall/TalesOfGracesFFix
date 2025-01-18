@@ -1,5 +1,5 @@
 ﻿# Tales of Graces f Remastered Fix
-[![Patreon-Button]()](https://www.patreon.com/Wintermance) 
+[![Patreon-Button](https://raw.githubusercontent.com/Lyall/TalesOfGracesFFix/refs/heads/master/.github/Patreon-Button.png)](https://www.patreon.com/Wintermance) 
 [![ko-fi](https://ko-fi.com/img/githubbutton_sm.svg)](https://ko-fi.com/W7W01UAI9)<br />
 [![Github All Releases](https://img.shields.io/github/downloads/Lyall/TalesOfGracesFFix/total.svg)](https://github.com/Lyall/TalesOfGracesFFix/releases)
 
@@ -26,10 +26,11 @@ Please report any issues you see.
 This list will contain bugs which may or may not be fixed.
 
 - Screen capture textures (such as the pause transition) are squashed when using an ultrawide/narrower display.
-
+- Pre-rendered movies are stretched when using an ultrawide/narrower display.
+- 
 ## Screenshots
 
-|  |
+| ![ezgif-4-73b55bf57a](https://github.com/user-attachments/assets/27422730-2bd5-4eb1-9f92-caa8f6e7c9ea) |
 |:--:|
 | Gameplay |
 
