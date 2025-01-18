@@ -12,7 +12,7 @@ This is a BepInEx plugin for Tales of Graces f Remastered that aims to add ultra
 
 ## Installation
 - Grab the latest release of TalesOfGracesFFix from [here.](https://github.com/Lyall/TalesOfGracesFFix/releases)
-- Extract the contents of the release zip in to the the game folder. (e.g. "**steamapps\common\	Tales of Graces f Remastered**" for Steam).
+- Extract the contents of the release zip in to the the game folder. <br />(e.g. "**steamapps\common\Tales of Graces f Remastered**" for Steam).
 
 ### Steam Deck/Linux Additional Instructions
 🚩**You do not need to do this if you are using Windows!**
