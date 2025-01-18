@@ -40,7 +40,7 @@ namespace TalesOfGracesFFix
             iMSAASamples = Config.Bind("Graphical Tweaks",
                                 "MSAA Samples",
                                 1,
-                                new ConfigDescription("Set number of MSAA samples. 1 = off. Note that enabling MSAA will disable depth of field.",
+                                new ConfigDescription("Set number of MSAA samples. 1 = off. Note that enabling MSAA will disable depth of field and FXAA.",
                                 new AcceptableValueList<int>(1, 2, 4, 8, 16)));
 
             bDepthOfField = Config.Bind("Graphical Tweaks",
@@ -137,6 +137,14 @@ namespace TalesOfGracesFFix
                 {
                     urpAsset.msaaSampleCount = iMSAASamples.Value;
                     Log.LogInfo($"Graphical Tweaks: Set MSAA sample count to {iMSAASamples.Value}.");
+                }
+
+                // FXAA
+                __instance.profile.TryGet(out NoblePostEffectCustomFXAAParam fxaa);
+                if (fxaa && iMSAASamples.Value > 1)
+                {
+                    fxaa.active = false;
+                    Log.LogInfo($"Graphical Tweaks: Disabled FXAA on volume {__instance.gameObject.name}.");
                 }
 
                 // Depth of field
