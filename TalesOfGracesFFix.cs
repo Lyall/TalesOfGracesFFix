@@ -72,15 +72,25 @@ namespace TalesOfGracesFFix
                 Log.LogInfo($"Current Resolution: Aspect Multiplier: {fAspectMultiplier}");
             }
 
-            // Camera rect/aspect ratio
+            // Camera rect
             [HarmonyPatch(typeof(Noble.CameraManager), nameof(Noble.CameraManager.SetCameraViewportRect))]
-            [HarmonyPostfix]
-            public static void ResetCameraRect(Noble.CameraManager __instance)
+            [HarmonyPrefix]
+            public static void CameraRect(Noble.CameraManager __instance, ref Rect __0)
             {
                 if (fAspectRatio != fNativeAspect)
                 {
-                    __instance.mCamera.rect = new Rect(0f, 0f, 1f, 1f);
-                    __instance.mCamera.ResetAspect();
+                    __0 = new Rect(0f, 0f, 1f, 1f);
+                }
+            }
+
+            // Camera aspect ratio
+            [HarmonyPatch(typeof(Noble.CameraManager), nameof(Noble.CameraManager.SetCameraAspect))]
+            [HarmonyPrefix]
+            public static void CameraAspectRatio(Noble.CameraManager __instance, ref float __0)
+            {
+                if (fAspectRatio != fNativeAspect)
+                {
+                    __0 = fAspectRatio;
                 }
             }
 
