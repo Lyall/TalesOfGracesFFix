@@ -29,6 +29,11 @@ namespace TalesOfGracesFFix
             Log = base.Logger;
             Log.LogInfo($"{MyPluginInfo.PLUGIN_GUID} v{MyPluginInfo.PLUGIN_VERSION} is loaded!");
 
+            // Aspect ratio
+            bFixAspectRatio = Config.Bind("Ultrawide/Narrower",
+                                "Fix Aspect Ratio",
+                                true,
+                                "Removes pillarboxing/letterboxing and centers the UI at 16:9.");
 
             // Graphical tweaks
             iMSAASamples = Config.Bind("Graphical Tweaks",
@@ -42,12 +47,7 @@ namespace TalesOfGracesFFix
                                 true,
                                 "Enable or disable depth of field.");
 
-            // Aspect ratio
-            bFixAspectRatio = Config.Bind("Ultrawide/Narrower",
-                                "Fix Aspect Ratio",
-                                true,
-                                "Removes pillarboxing/letterboxing and centers the UI at 16:9.");
-
+            // Apply patches
             if (bFixAspectRatio.Value)
                 Harmony.CreateAndPatchAll(typeof(AspectRatioPatches));
 
@@ -61,7 +61,7 @@ namespace TalesOfGracesFFix
             // Calculate aspect ratio
             [HarmonyPatch(typeof(Screen), nameof(Screen.SetResolution), [typeof(int), typeof(int), typeof(FullScreenMode)])]
             [HarmonyPostfix]
-            public static void GetCurrentResolution(ref int __0, ref int __1, ref FullScreenMode __2)
+            public static void CurrentResolution(ref int __0, ref int __1, ref FullScreenMode __2)
             {
                 fAspectRatio = (float)__0 / __1;
                 fAspectMultiplier = fAspectRatio / fNativeAspect;
@@ -100,11 +100,11 @@ namespace TalesOfGracesFFix
             [HarmonyPostfix]
             public static void GraphicalTweaks(UnityEngine.Rendering.Volume __instance)
             {
-                // Get current render pipeline
+                // Get current render pipeline asset
                 var urpAsset = UnityEngine.Rendering.GraphicsSettings.currentRenderPipeline as UnityEngine.Rendering.Universal.UniversalRenderPipelineAsset;
 
                 // MSAA
-                if (iMSAASamples.Value > 1 && urpAsset)
+                if (iMSAASamples.Value > 1)
                 {
                     urpAsset.msaaSampleCount = iMSAASamples.Value;
                     Log.LogInfo($"Graphical Tweaks: Set MSAA sample count to {iMSAASamples.Value}.");
