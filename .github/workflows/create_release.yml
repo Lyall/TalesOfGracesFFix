@@ -36,6 +36,7 @@ jobs:
         cp build/${{ github.event.repository.name }}.dll ${{ github.event.repository.name }}/BepInEx/plugins/${{ github.event.repository.name }}.dll
         unzip BepInEx-Unity.Mono-win-x64* -d ${{ github.event.repository.name }}
         chmod -R 775 ${{ github.event.repository.name }}
+        mv ${{ github.event.repository.name }}/winhttp.dll ${{ github.event.repository.name }}/version.dll
         cp .github/workflows/BepInEx.cfg ${{ github.event.repository.name }}/BepInEx/config
         touch ${{ github.event.repository.name }}/EXTRACT_TO_GAME_DIRECTORY
         cd ${{ github.event.repository.name }}; zip -r ../${{ github.event.repository.name }}_${{ github.event.inputs.version }}.zip ./*
