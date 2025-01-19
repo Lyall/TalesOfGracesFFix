@@ -6,6 +6,8 @@ using HarmonyLib;
 
 using UnityEngine;
 using System;
+using UnityEngine.Rendering.Universal;
+using Noble;
 
 namespace TalesOfGracesFFix
 {
@@ -15,9 +17,11 @@ namespace TalesOfGracesFFix
         internal static ManualLogSource Log;
 
         // Features
-        public static ConfigEntry<bool> bFixAspectRatio;
-        public static ConfigEntry<int> iMSAASamples;
-        public static ConfigEntry<bool> bDepthOfField;
+        public static ConfigEntry<bool>  bFixAspectRatio;
+        public static ConfigEntry<int>   iMSAASamples;
+        public static ConfigEntry<bool>  bDepthOfField;
+        public static ConfigEntry<float> fTargetFramerate;
+        public static ConfigEntry<bool>  bSpecialKMode;
 
         // Aspect Ratio
         private const float fNativeAspect = (float)16 / 9;
@@ -48,12 +52,35 @@ namespace TalesOfGracesFFix
                                 true,
                                 "Enable or disable depth of field.");
 
+            fTargetFramerate = Config.Bind("Framerate Limiter",
+                                "Target Framerate",
+                                0.0f,
+                                new ConfigDescription("-1.0 = Use Game Setting, 0.0 = VSYNC Limited or Unlimited if VSYNC is OFF, > 0.0 = An Exact Framerate Limit."));
+
+            bSpecialKMode = Config.Bind("Third-Party Frameworks",
+                                "Using SpecialK",
+                                false,
+                                new ConfigDescription("Allow Special K and ReShade/RenoDX to manage a few graphical tweaks (and HDR features) on their own."));
+
             // Apply patches
             if (bFixAspectRatio.Value)
                 Harmony.CreateAndPatchAll(typeof(AspectRatioPatches));
 
             if (!bDepthOfField.Value || iMSAASamples.Value >1)
                 Harmony.CreateAndPatchAll(typeof(GraphicsPatches));
+
+            if (fTargetFramerate.Value > -1.0f)
+            {
+                Harmony.CreateAndPatchAll(typeof(FrameratePatches));
+
+                var frmMgr = Noble.FrameRateManager.GetSingletonInstance();
+
+                if (fTargetFramerate.Value > 0.0f)
+                {
+                    frmMgr.SetQualitySettingFrameRate (fTargetFramerate.Value);
+                    frmMgr.SetTargetFrameRate         (fTargetFramerate.Value);
+                }
+            }
         }
 
         [HarmonyPatch]
@@ -122,6 +149,59 @@ namespace TalesOfGracesFFix
         }
 
         [HarmonyPatch]
+        public class FrameratePatches
+        {
+            [HarmonyPatch(typeof(Noble.FrameRateManager), nameof(Noble.FrameRateManager.SetQualitySettingFrameRate))]
+            [HarmonyPrefix]
+            public static bool SetQualitySettingFrameRate(ref float rate)
+            {
+                var __instance = Noble.FrameRateManager.GetSingletonInstance();
+                if (__instance != null)
+                {
+                    if (__instance.mParam.m_IsBoostWhileLoading)
+                    {
+                      __instance.mParam.m_QualitySettingFrameRate = 1000.0f;
+                      __instance.mParam.m_TargetFrameRate         =  999.0f;
+                    }
+                    
+                    else
+                    {
+                        if (fTargetFramerate.Value > 0.0f)
+                        {
+                            // Add 1.0 to ensure third-party limiters can set the precise value and override the game's internal limiter
+                            __instance.mParam.m_QualitySettingFrameRate = System.Math.Min (1000.0f, System.Math.Max (fTargetFramerate.Value, 20.0f) + 1.0f);
+                            __instance.mParam.m_TargetFrameRate         = System.Math.Min ( 999.0f, System.Math.Max (fTargetFramerate.Value, 20.0f));
+                        }
+
+                        else if (fTargetFramerate.Value == 0.0f)
+                        {
+                            float refreshRate = System.Math.Max (__instance.mParam.m_RefreshRateHertz, 30.0f);
+
+                            if (__instance.mParam.m_EnableVSync)
+                            {
+                                __instance.mParam.m_QualitySettingFrameRate = refreshRate + 1.0f;
+                                __instance.mParam.m_TargetFrameRate         = refreshRate;
+                            }
+
+                            else
+                            {
+                                __instance.mParam.m_QualitySettingFrameRate = 1000.0f;
+                                __instance.mParam.m_TargetFrameRate         =  999.0f;
+                            }
+                        }
+                    }
+
+                  rate = __instance.mParam.m_QualitySettingFrameRate;
+
+                  return true;
+                  
+                }
+
+                return false;
+            }
+        }
+
+        [HarmonyPatch]
         public class GraphicsPatches
         {
             // Adjust graphical settings
@@ -132,27 +212,42 @@ namespace TalesOfGracesFFix
                 // Get current render pipeline asset
                 var urpAsset = UnityEngine.Rendering.GraphicsSettings.currentRenderPipeline as UnityEngine.Rendering.Universal.UniversalRenderPipelineAsset;
 
-                // MSAA
+                //// MSAA
                 if (iMSAASamples.Value > 1)
                 {
                     urpAsset.msaaSampleCount = iMSAASamples.Value;
                     Log.LogInfo($"Graphical Tweaks: Set MSAA sample count to {iMSAASamples.Value}.");
                 }
 
-                // FXAA
-                __instance.profile.TryGet(out NoblePostEffectCustomFXAAParam fxaa);
-                if (fxaa && iMSAASamples.Value > 1)
+                //// HDR related stuff
+                if (bSpecialKMode.Value)
                 {
-                    fxaa.active = false;
-                    Log.LogInfo($"Graphical Tweaks: Disabled FXAA on volume {__instance.gameObject.name}.");
+                    urpAsset.m_MainLightShadowmapResolution             = UnityEngine.Rendering.Universal.ShadowResolution._1024;
+                    urpAsset.m_HDRColorBufferPrecision                  = UnityEngine.Rendering.Universal.HDRColorBufferPrecision._64Bits;
+                    urpAsset.m_ColorGradingMode                         = UnityEngine.Rendering.Universal.ColorGradingMode.HighDynamicRange;
+                    urpAsset.m_ColorGradingLutSize                      = 65;
+                    urpAsset.additionalLightsShadowResolutionTierHigh   = 1024;
+                    urpAsset.additionalLightsShadowResolutionTierMedium = 512;
+                    urpAsset.additionalLightsShadowResolutionTierLow    = 256;
                 }
 
-                // Depth of field
-                __instance.profile.TryGet(out NoblePostEffectDepthOfFieldParam dof);
-                if (dof && (!bDepthOfField.Value || iMSAASamples.Value > 1))
+                else
                 {
-                    dof.active = false;
-                    Log.LogInfo($"Graphical Tweaks: Disabled depth of field on volume {__instance.gameObject.name}.");
+                    // FXAA
+                    __instance.profile.TryGet(out NoblePostEffectCustomFXAAParam fxaa);
+                    if (fxaa && iMSAASamples.Value > 1)
+                    {
+                        fxaa.active = false;
+                        Log.LogInfo($"Graphical Tweaks: Disabled FXAA on volume {__instance.gameObject.name}.");
+                    }
+
+                    // Depth of field
+                    __instance.profile.TryGet(out NoblePostEffectDepthOfFieldParam dof);
+                    if (dof && (!bDepthOfField.Value || iMSAASamples.Value > 1))
+                    {
+                        dof.active = false;
+                        Log.LogInfo($"Graphical Tweaks: Disabled depth of field on volume {__instance.gameObject.name}.");
+                    }
                 }
             }
         }
