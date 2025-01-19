@@ -18,6 +18,7 @@ namespace TalesOfGracesFFix
         public static ConfigEntry<bool> bFixAspectRatio;
         public static ConfigEntry<int> iMSAASamples;
         public static ConfigEntry<bool> bDepthOfField;
+        public static ConfigEntry<bool> bBloom;
 
         // Aspect Ratio
         private const float fNativeAspect = (float)16 / 9;
@@ -47,6 +48,11 @@ namespace TalesOfGracesFFix
                                 "Depth Of Field",
                                 true,
                                 "Enable or disable depth of field.");
+
+            bBloom = Config.Bind("Graphical Tweaks",
+                                "Bloom",
+                                true,
+                                "Enable or disable bloom.");
 
             // Apply patches
             if (bFixAspectRatio.Value)
@@ -118,7 +124,7 @@ namespace TalesOfGracesFFix
                     else if (fAspectRatio < fNativeAspect)
                         __instance._pass.cameraview.m11 = fAspectMultiplier;
                 }
-            }
+            }       
         }
 
         [HarmonyPatch]
@@ -143,7 +149,7 @@ namespace TalesOfGracesFFix
                 __instance.profile.TryGet(out NoblePostEffectCustomFXAAParam fxaa);
                 if (fxaa && iMSAASamples.Value > 1)
                 {
-                    fxaa.active = false;
+                    fxaa.m_fxaaEnable.value = false;
                     Log.LogInfo($"Graphical Tweaks: Disabled FXAA on volume {__instance.gameObject.name}.");
                 }
 
@@ -153,6 +159,14 @@ namespace TalesOfGracesFFix
                 {
                     dof.active = false;
                     Log.LogInfo($"Graphical Tweaks: Disabled depth of field on volume {__instance.gameObject.name}.");
+                }
+
+                // Bloom
+                __instance.profile.TryGet(out UnityEngine.Rendering.Universal.Bloom bloom);
+                if (bloom && !bBloom.Value)
+                {
+                    bloom.active = false;
+                    Log.LogInfo($"Graphical Tweaks: Disabled bloom on volume {__instance.gameObject.name}.");
                 }
             }
         }
