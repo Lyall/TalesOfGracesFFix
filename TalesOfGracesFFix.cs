@@ -55,7 +55,7 @@ namespace TalesOfGracesFFix
 
             fTargetFramerate = Config.Bind("Framerate Limiter",
                                 "Target Framerate",
-                                10000.0f,
+                                0.0f,
                                 new ConfigDescription("-1.0 = Use Game Setting, 0.0 = VSYNC Limited or Unlimited if VSYNC is OFF, > 0.0 = An Exact Framerate Limit."));
 
             bSpecialKMode = Config.Bind("Third-Party Frameworks",
@@ -76,7 +76,7 @@ namespace TalesOfGracesFFix
 
                 var frmMgr = Noble.FrameRateManager.GetSingletonInstance();
 
-                if (fTargetFramerate.Value > 0.0f)
+                if (fTargetFramerate.Value > -1.0f)
                 {
                     frmMgr.SetQualitySettingFrameRate (fTargetFramerate.Value);
                     frmMgr.SetTargetFrameRate         (fTargetFramerate.Value);
@@ -168,8 +168,7 @@ namespace TalesOfGracesFFix
                 {
                     if (__instance.mParam.m_IsBoostWhileLoading)
                     {
-                      __instance.mParam.m_QualitySettingFrameRate = 10000.0f;
-                      __instance.mParam.m_TargetFrameRate         =  9999.0f;
+                      rate = 0.0f;
                       Log.LogInfo($"Noble.FrameRateManager::SetQualitySettingFrameRate(...) m_IsBoostWhileLoading=true");
                     }
                     
@@ -177,35 +176,24 @@ namespace TalesOfGracesFFix
                     {
                         if (fTargetFramerate.Value > 0.0f)
                         {
-                            // Add 1.0 to ensure third-party limiters can set the precise value and override the game's internal limiter
-                            __instance.mParam.m_QualitySettingFrameRate = fTargetFramerate.Value <= 10000.0f ?
-                                                                          fTargetFramerate.Value  : 10000.0f ;
-                            __instance.mParam.m_TargetFrameRate =         fTargetFramerate.Value <= 9999.0f  ?
-                                                                          fTargetFramerate.Value  : 9999.0f;
+                            rate = fTargetFramerate.Value * 1.005f;
                         }
 
                         else if (fTargetFramerate.Value == 0.0f)
                         {
-                            float refreshRate = (__instance.mParam.m_RefreshRateHertz > 30.0f) ?
-                                                 __instance.mParam.m_RefreshRateHertz          :
-                                                 __instance.mParam.m_RefreshRateHertz >  0.0f  ?
-                                                                                        30.0f  : 9999.0f;
+                            float refreshRate = __instance.mParam.m_RefreshRateHertz;
 
                             if (__instance.mParam.m_EnableVSync)
                             {
-                                __instance.mParam.m_QualitySettingFrameRate = refreshRate + 1.0f;
-                                __instance.mParam.m_TargetFrameRate         = refreshRate;
+                                rate = refreshRate * 1.005f;
                             }
 
                             else
                             {
-                                __instance.mParam.m_QualitySettingFrameRate = 10000.0f;
-                                __instance.mParam.m_TargetFrameRate         =  9999.0f;
+                                rate = 10000.0f;
                             }
                         }
                     }
-
-                    rate = __instance.mParam.m_QualitySettingFrameRate;
                 }
             }
 
@@ -225,7 +213,7 @@ namespace TalesOfGracesFFix
                 {
                     if (__instance.mParam.m_IsBoostWhileLoading)
                     {
-                        __instance.mParam.m_TargetFrameRate = 9999.0f;
+                        rate = 0.0f;
                         Log.LogInfo($"Noble.FrameRateManager::SetTargetFramerate(...) m_IsBoostWhileLoading=true");
                     }
 
@@ -233,30 +221,24 @@ namespace TalesOfGracesFFix
                     {
                         if (fTargetFramerate.Value > 0.0f)
                         {
-                            __instance.mParam.m_TargetFrameRate = fTargetFramerate.Value <= 9999.0f ?
-                                                                  fTargetFramerate.Value  : 9999.0f;
+                            rate = fTargetFramerate.Value * 1.005f;
                         }
 
                         else if (fTargetFramerate.Value == 0.0f)
                         {
-                            float refreshRate = (__instance.mParam.m_RefreshRateHertz > 30.0f) ?
-                                                 __instance.mParam.m_RefreshRateHertz          :
-                                                 __instance.mParam.m_RefreshRateHertz >   0.0f ?
-                                                                                         30.0f : 9999.0f;
+                            float refreshRate = __instance.mParam.m_RefreshRateHertz;
 
                             if (__instance.mParam.m_EnableVSync)
                             {
-                                __instance.mParam.m_TargetFrameRate = refreshRate;
+                                rate = refreshRate * 1.005f;
                             }
 
                             else
                             {
-                                __instance.mParam.m_TargetFrameRate = 9999.0f;
+                                rate = 10000.0f;
                             }
                         }
                     }
-
-                    rate = __instance.mParam.m_TargetFrameRate;
                 }
             }
         }
