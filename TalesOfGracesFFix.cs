@@ -46,7 +46,7 @@ namespace TalesOfGracesFFix
                                 "MSAA Samples",
                                 1,
                                 new ConfigDescription("Set number of MSAA samples. 1 = off. Note that enabling MSAA will disable depth of field and FXAA.",
-                                new AcceptableValueList<int>(1, 2, 4, 8, 16)));
+                                new AcceptableValueList<int>(1, 2, 4, 8)));
 
             bDepthOfField = Config.Bind("Graphical Tweaks",
                                 "Depth Of Field",
@@ -55,7 +55,7 @@ namespace TalesOfGracesFFix
 
             fTargetFramerate = Config.Bind("Framerate Limiter",
                                 "Target Framerate",
-                                0.0f,
+                                10000.0f,
                                 new ConfigDescription("-1.0 = Use Game Setting, 0.0 = VSYNC Limited or Unlimited if VSYNC is OFF, > 0.0 = An Exact Framerate Limit."));
 
             bSpecialKMode = Config.Bind("Third-Party Frameworks",
