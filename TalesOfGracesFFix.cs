@@ -8,6 +8,7 @@ using UnityEngine;
 using System;
 using UnityEngine.Rendering.Universal;
 using Noble;
+using System.Text;
 
 namespace TalesOfGracesFFix
 {
@@ -152,16 +153,24 @@ namespace TalesOfGracesFFix
         public class FrameratePatches
         {
             [HarmonyPatch(typeof(Noble.FrameRateManager), nameof(Noble.FrameRateManager.SetQualitySettingFrameRate))]
-            [HarmonyPrefix]
-            public static bool SetQualitySettingFrameRate(ref float rate)
+            [HarmonyPostfix]
+            static void SetQualitySettingFrameRatePostfix(Noble.FrameRateManager __instance, float __0)
             {
-                var __instance = Noble.FrameRateManager.GetSingletonInstance();
+                Log.LogInfo($"Noble.FrameRateManager::SetQualitySettingFrameRate({__0})");
+            }
+
+
+            [HarmonyPatch(typeof(Noble.FrameRateManager), nameof(Noble.FrameRateManager.SetQualitySettingFrameRate))]
+            [HarmonyPrefix]
+            public static void SetQualitySettingFrameRate(Noble.FrameRateManager __instance, ref float rate)
+            {
                 if (__instance != null)
                 {
                     if (__instance.mParam.m_IsBoostWhileLoading)
                     {
-                      __instance.mParam.m_QualitySettingFrameRate = 1000.0f;
-                      __instance.mParam.m_TargetFrameRate         =  999.0f;
+                      __instance.mParam.m_QualitySettingFrameRate = 10000.0f;
+                      __instance.mParam.m_TargetFrameRate         =  9999.0f;
+                      Log.LogInfo($"Noble.FrameRateManager::SetQualitySettingFrameRate(...) m_IsBoostWhileLoading=true");
                     }
                     
                     else
@@ -169,13 +178,18 @@ namespace TalesOfGracesFFix
                         if (fTargetFramerate.Value > 0.0f)
                         {
                             // Add 1.0 to ensure third-party limiters can set the precise value and override the game's internal limiter
-                            __instance.mParam.m_QualitySettingFrameRate = System.Math.Min (1000.0f, System.Math.Max (fTargetFramerate.Value, 20.0f) + 1.0f);
-                            __instance.mParam.m_TargetFrameRate         = System.Math.Min ( 999.0f, System.Math.Max (fTargetFramerate.Value, 20.0f));
+                            __instance.mParam.m_QualitySettingFrameRate = fTargetFramerate.Value <= 10000.0f ?
+                                                                          fTargetFramerate.Value  : 10000.0f ;
+                            __instance.mParam.m_TargetFrameRate =         fTargetFramerate.Value <= 9999.0f  ?
+                                                                          fTargetFramerate.Value  : 9999.0f;
                         }
 
                         else if (fTargetFramerate.Value == 0.0f)
                         {
-                            float refreshRate = System.Math.Max (__instance.mParam.m_RefreshRateHertz, 30.0f);
+                            float refreshRate = (__instance.mParam.m_RefreshRateHertz > 30.0f) ?
+                                                 __instance.mParam.m_RefreshRateHertz          :
+                                                 __instance.mParam.m_RefreshRateHertz >  0.0f  ?
+                                                                                        30.0f  : 9999.0f;
 
                             if (__instance.mParam.m_EnableVSync)
                             {
@@ -185,19 +199,65 @@ namespace TalesOfGracesFFix
 
                             else
                             {
-                                __instance.mParam.m_QualitySettingFrameRate = 1000.0f;
-                                __instance.mParam.m_TargetFrameRate         =  999.0f;
+                                __instance.mParam.m_QualitySettingFrameRate = 10000.0f;
+                                __instance.mParam.m_TargetFrameRate         =  9999.0f;
                             }
                         }
                     }
 
-                  rate = __instance.mParam.m_QualitySettingFrameRate;
-
-                  return true;
-                  
+                    rate = __instance.mParam.m_QualitySettingFrameRate;
                 }
+            }
 
-                return false;
+            [HarmonyPatch(typeof(Noble.FrameRateManager), nameof(Noble.FrameRateManager.SetTargetFrameRate))]
+            [HarmonyPostfix]
+            static void SetTargetFrameratePostfix(Noble.FrameRateManager __instance, float __0)
+            {
+                //Log.LogInfo($"Noble.FrameRateManager::SetTargetFrameRate({__0})");
+            }
+
+
+            [HarmonyPatch(typeof(Noble.FrameRateManager), nameof(Noble.FrameRateManager.SetTargetFrameRate))]
+            [HarmonyPrefix]
+            public static void SetTargetFrameRate(Noble.FrameRateManager __instance, ref float rate)
+            {
+                if (__instance != null)
+                {
+                    if (__instance.mParam.m_IsBoostWhileLoading)
+                    {
+                        __instance.mParam.m_TargetFrameRate = 9999.0f;
+                        Log.LogInfo($"Noble.FrameRateManager::SetTargetFramerate(...) m_IsBoostWhileLoading=true");
+                    }
+
+                    else
+                    {
+                        if (fTargetFramerate.Value > 0.0f)
+                        {
+                            __instance.mParam.m_TargetFrameRate = fTargetFramerate.Value <= 9999.0f ?
+                                                                  fTargetFramerate.Value  : 9999.0f;
+                        }
+
+                        else if (fTargetFramerate.Value == 0.0f)
+                        {
+                            float refreshRate = (__instance.mParam.m_RefreshRateHertz > 30.0f) ?
+                                                 __instance.mParam.m_RefreshRateHertz          :
+                                                 __instance.mParam.m_RefreshRateHertz >   0.0f ?
+                                                                                         30.0f : 9999.0f;
+
+                            if (__instance.mParam.m_EnableVSync)
+                            {
+                                __instance.mParam.m_TargetFrameRate = refreshRate;
+                            }
+
+                            else
+                            {
+                                __instance.mParam.m_TargetFrameRate = 9999.0f;
+                            }
+                        }
+                    }
+
+                    rate = __instance.mParam.m_TargetFrameRate;
+                }
             }
         }
 
@@ -222,13 +282,9 @@ namespace TalesOfGracesFFix
                 //// HDR related stuff
                 if (bSpecialKMode.Value)
                 {
-                    urpAsset.m_MainLightShadowmapResolution             = UnityEngine.Rendering.Universal.ShadowResolution._1024;
                     urpAsset.m_HDRColorBufferPrecision                  = UnityEngine.Rendering.Universal.HDRColorBufferPrecision._64Bits;
                     urpAsset.m_ColorGradingMode                         = UnityEngine.Rendering.Universal.ColorGradingMode.HighDynamicRange;
                     urpAsset.m_ColorGradingLutSize                      = 65;
-                    urpAsset.additionalLightsShadowResolutionTierHigh   = 1024;
-                    urpAsset.additionalLightsShadowResolutionTierMedium = 512;
-                    urpAsset.additionalLightsShadowResolutionTierLow    = 256;
                 }
 
                 else
