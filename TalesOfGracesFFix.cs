@@ -42,7 +42,7 @@ namespace TalesOfGracesFFix
                                 "MSAA Samples",
                                 1,
                                 new ConfigDescription("Set number of MSAA samples. 1 = off. Note that enabling MSAA will disable depth of field and FXAA.",
-                                new AcceptableValueList<int>(1, 2, 4, 8, 16)));
+                                new AcceptableValueList<int>(1, 2, 4, 8)));
 
             bDepthOfField = Config.Bind("Graphical Tweaks",
                                 "Depth Of Field",
