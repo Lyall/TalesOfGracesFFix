@@ -148,7 +148,7 @@ namespace TalesOfGracesFFix
                     else if (fAspectRatio < fNativeAspect)
                         __instance._pass.cameraview.m11 = fAspectMultiplier;
                 }
-            }
+            }       
         }
 
         [HarmonyPatch]
