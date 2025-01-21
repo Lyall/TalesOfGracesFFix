@@ -9,6 +9,8 @@ This is a BepInEx plugin for Tales of Graces f Remastered that aims to add ultra
 - Ultrawide and narrower aspect ratio support.
 - Enable MSAA.
 - Disable depth of field.
+- Disable bloom.
+- Adjust framerate limit.
 
 ## Installation
 - Grab the latest release of TalesOfGracesFFix from [here.](https://github.com/Lyall/TalesOfGracesFFix/releases)
@@ -17,7 +19,7 @@ This is a BepInEx plugin for Tales of Graces f Remastered that aims to add ultra
 
 ### Steam Deck/Linux Additional Instructions
 🚩**You do not need to do this if you are using Windows!**
-- Open up the game properties in Steam and add `WINEDLLOVERRIDES="winhttp=n,b" %command%` to the launch options.
+- Open up the game properties in Steam and add `WINEDLLOVERRIDES="version=n,b" %command%` to the launch options.
 
 ## Configuration
 - See **`GameFolder`\BepInEx\config\TalesOfGracesFFix.cfg** (after launching the game at least once) to adjust settings for the plugin.
