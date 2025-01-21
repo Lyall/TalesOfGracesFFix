@@ -70,7 +70,7 @@ namespace TalesOfGracesFFix
             if (bFixAspectRatio.Value)
                 Harmony.CreateAndPatchAll(typeof(AspectRatioPatches));
 
-            if (!bDepthOfField.Value || iMSAASamples.Value >1)
+            if (!bDepthOfField.Value || iMSAASamples.Value >1 || !bBloom.Value)
                 Harmony.CreateAndPatchAll(typeof(GraphicsPatches));
 
             if (fTargetFramerate.Value > -1.0f)
@@ -84,6 +84,11 @@ namespace TalesOfGracesFFix
                     framerate_mgr.SetQualitySettingFrameRate (fTargetFramerate.Value);
                 }
             }
+        }
+
+        private void OnDestroy()
+        {
+            Harmony.UnpatchAll();
         }
 
         [HarmonyPatch]
