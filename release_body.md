@@ -7,7 +7,7 @@
 
 ### Steam Deck/Linux Additional Instructions
 🚩**You do not need to do this if you are using Windows!**
-- Open up the game properties in Steam and add `WINEDLLOVERRIDES="winhttp=n,b" %command%` to the launch options.
+- Open up the game properties in Steam and add `WINEDLLOVERRIDES="version=n,b" %command%` to the launch options.
 
 ## Configuration
 - See **`GameFolder`\BepInEx\config\TalesOfGracesFFix.cfg** (after launching the game at least once) to adjust settings for the plugin.
