@@ -19,6 +19,8 @@ namespace TalesOfGracesFFix
         public static ConfigEntry<int> iMSAASamples;
         public static ConfigEntry<bool> bDepthOfField;
         public static ConfigEntry<bool> bBloom;
+        public static ConfigEntry<float> fTargetFramerate;
+        public static ConfigEntry<bool> bSpecialKMode;
 
         // Aspect Ratio
         private const float fNativeAspect = (float)16 / 9;
@@ -54,12 +56,34 @@ namespace TalesOfGracesFFix
                                 true,
                                 "Enable or disable bloom.");
 
+            fTargetFramerate = Config.Bind("Framerate Limiter",
+                                "Target Framerate",
+                                0.0f,
+                                new ConfigDescription("-1.0 = Use Game Setting, 0.0 = VSYNC Limited or Unlimited if VSYNC is OFF, > 0.0 = An Exact Framerate Limit."));
+
+            bSpecialKMode = Config.Bind("Third-Party Frameworks",
+                                "Using SpecialK",
+                                false,
+                                new ConfigDescription("Allow Special K and ReShade/RenoDX to manage a few graphical tweaks (and HDR features) on their own."));
+
             // Apply patches
             if (bFixAspectRatio.Value)
                 Harmony.CreateAndPatchAll(typeof(AspectRatioPatches));
 
             if (!bDepthOfField.Value || iMSAASamples.Value >1)
                 Harmony.CreateAndPatchAll(typeof(GraphicsPatches));
+
+            if (fTargetFramerate.Value > -1.0f)
+            {
+                Harmony.CreateAndPatchAll(typeof(FrameratePatches));
+
+                var framerate_mgr = Noble.FrameRateManager.GetSingletonInstance();
+
+                if (fTargetFramerate.Value > 0.0f)
+                {
+                    framerate_mgr.SetQualitySettingFrameRate (fTargetFramerate.Value);
+                }
+            }
         }
 
         [HarmonyPatch]
@@ -124,7 +148,101 @@ namespace TalesOfGracesFFix
                     else if (fAspectRatio < fNativeAspect)
                         __instance._pass.cameraview.m11 = fAspectMultiplier;
                 }
-            }       
+            }
+        }
+
+        [HarmonyPatch]
+        public class FrameratePatches
+        {
+            [HarmonyPatch(typeof(Noble.FrameRateManager), nameof(Noble.FrameRateManager.SetQualitySettingFrameRate))]
+            [HarmonyPostfix]
+            static void SetQualitySettingFrameRatePostfix(Noble.FrameRateManager __instance, float __0)
+            {
+                Log.LogInfo($"Noble.FrameRateManager::SetQualitySettingFrameRate({__0})");
+            }
+
+
+            [HarmonyPatch(typeof(Noble.FrameRateManager), nameof(Noble.FrameRateManager.SetQualitySettingFrameRate))]
+            [HarmonyPrefix]
+            public static void SetQualitySettingFrameRate(Noble.FrameRateManager __instance, ref float rate)
+            {
+                if (__instance != null)
+                {
+                    if (__instance.mParam.m_IsBoostWhileLoading)
+                    {
+                        rate = 0.0f;
+                        Log.LogInfo($"Noble.FrameRateManager::SetQualitySettingFrameRate(...) m_IsBoostWhileLoading=true");
+                    }
+
+                    else
+                    {
+                        if (fTargetFramerate.Value > 0.0f)
+                        {
+                            rate = fTargetFramerate.Value * 1.005f;
+                        }
+
+                        else if (fTargetFramerate.Value == 0.0f)
+                        {
+                            float refreshRate = __instance.mParam.m_RefreshRateHertz;
+
+                            if (__instance.mParam.m_EnableVSync)
+                            {
+                                rate = refreshRate * 1.005f;
+                            }
+
+                            else
+                            {
+                                rate = 10000.0f;
+                            }
+                        }
+                    }
+                }
+            }
+
+            [HarmonyPatch(typeof(Noble.FrameRateManager), nameof(Noble.FrameRateManager.SetTargetFrameRate))]
+            [HarmonyPostfix]
+            static void SetTargetFrameratePostfix(Noble.FrameRateManager __instance, float __0)
+            {
+                //Log.LogInfo($"Noble.FrameRateManager::SetTargetFrameRate({__0})");
+            }
+
+
+            [HarmonyPatch(typeof(Noble.FrameRateManager), nameof(Noble.FrameRateManager.SetTargetFrameRate))]
+            [HarmonyPrefix]
+            public static void SetTargetFrameRate(Noble.FrameRateManager __instance, ref float rate)
+            {
+                if (__instance != null)
+                {
+                    if (__instance.mParam.m_IsBoostWhileLoading)
+                    {
+                        rate = 0.0f;
+                        Log.LogInfo($"Noble.FrameRateManager::SetTargetFramerate(...) m_IsBoostWhileLoading=true");
+                    }
+
+                    else
+                    {
+                        if (fTargetFramerate.Value > 0.0f)
+                        {
+                            rate = fTargetFramerate.Value * 1.005f;
+                        }
+
+                        else if (fTargetFramerate.Value == 0.0f)
+                        {
+                            float refreshRate = __instance.mParam.m_RefreshRateHertz;
+
+                            if (__instance.mParam.m_EnableVSync)
+                            {
+                                rate = refreshRate * 1.005f;
+                            }
+
+                            else
+                            {
+                                rate = 10000.0f;
+                            }
+                        }
+                    }
+                }
+            }
         }
 
         [HarmonyPatch]
@@ -145,28 +263,39 @@ namespace TalesOfGracesFFix
                     Log.LogInfo($"Graphical Tweaks: Set MSAA sample count to {iMSAASamples.Value}.");
                 }
 
-                // FXAA
-                __instance.profile.TryGet(out NoblePostEffectCustomFXAAParam fxaa);
-                if (fxaa && iMSAASamples.Value > 1)
+                //// HDR related stuff
+                if (bSpecialKMode.Value)
                 {
-                    fxaa.m_fxaaEnable.value = false;
-                    Log.LogInfo($"Graphical Tweaks: Disabled FXAA on volume {__instance.gameObject.name}.");
+                    urpAsset.m_HDRColorBufferPrecision = UnityEngine.Rendering.Universal.HDRColorBufferPrecision._64Bits;
+                    urpAsset.m_ColorGradingMode        = UnityEngine.Rendering.Universal.ColorGradingMode.HighDynamicRange;
+                    urpAsset.m_ColorGradingLutSize     = 65;
                 }
 
-                // Depth of field
-                __instance.profile.TryGet(out NoblePostEffectDepthOfFieldParam dof);
-                if (dof && (!bDepthOfField.Value || iMSAASamples.Value > 1))
+                else
                 {
-                    dof.active = false;
-                    Log.LogInfo($"Graphical Tweaks: Disabled depth of field on volume {__instance.gameObject.name}.");
-                }
+                    // Depth of field
+                    __instance.profile.TryGet(out NoblePostEffectDepthOfFieldParam dof);
+                    if (dof && (!bDepthOfField.Value || iMSAASamples.Value > 1))
+                    {
+                        dof.active = false;
+                        Log.LogInfo($"Graphical Tweaks: Disabled depth of field on volume {__instance.gameObject.name}.");
+                    }
 
-                // Bloom
-                __instance.profile.TryGet(out UnityEngine.Rendering.Universal.Bloom bloom);
-                if (bloom && !bBloom.Value)
-                {
-                    bloom.active = false;
-                    Log.LogInfo($"Graphical Tweaks: Disabled bloom on volume {__instance.gameObject.name}.");
+                    // FXAA
+                    __instance.profile.TryGet(out NoblePostEffectCustomFXAAParam fxaa);
+                    if (fxaa && iMSAASamples.Value > 1)
+                    {
+                        fxaa.m_fxaaEnable.value = false;
+                        Log.LogInfo($"Graphical Tweaks: Disabled FXAA on volume {__instance.gameObject.name}.");
+                    }
+
+                    // Bloom
+                    __instance.profile.TryGet(out UnityEngine.Rendering.Universal.Bloom bloom);
+                    if (bloom && !bBloom.Value)
+                    {
+                        bloom.active = false;
+                        Log.LogInfo($"Graphical Tweaks: Disabled bloom on volume {__instance.gameObject.name}.");
+                    }
                 }
             }
         }
